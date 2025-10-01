@@ -90,6 +90,11 @@ def configure_robot_and_planner_with_kwargs(robot_name: str, planner_name: str, 
         plan_settings = AORRTCSettings()
         if robot_name in ROBOT_RRT_RANGES:
             plan_settings.rrtc.range = ROBOT_RRT_RANGES[robot_name]
+    
+    elif planner_name == "rrtctopp":
+        plan_settings = RRTCSettings()
+        if robot_name in ROBOT_RRT_RANGES:
+            plan_settings.rrtc.range = ROBOT_RRT_RANGES[robot_name]
 
     else:
         raise NotImplementedError(f"Automatic setup for planner {planner_name} is not implemented yet!")

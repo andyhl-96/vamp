@@ -99,6 +99,12 @@ namespace vamp::robots
             return (chigh - clow).l2_norm();
         }
 
+        // placeholder
+        template <typename InputVector, typename OutputVector>
+        static inline auto topple_nn_forward(const InputVector &x, OutputVector &out) noexcept {
+            return;
+        }
+        
         template <std::size_t rake>
         static auto fkcc(
             const vamp::collision::Environment<FloatVector<rake>> &environment,

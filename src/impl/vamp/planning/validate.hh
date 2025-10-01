@@ -93,15 +93,15 @@ namespace vamp::planning
         // use percents as times to get configs
         std::vector<state> states_vec;
         for (int i = 0; i < rake; i++) {
-            states_vec.push_back(bez.evaluate(percents[i]));
+            states_vec.push_back(bez.evaluate(percents.element(i)));
         }
 
-        row_matrix states(rake, Robot::dimension);
+        row_matrix states(rake, Robot::dimension / 3);
         for (int i = 0; i < rake; i++) {
-            states(i) = states_vec[i];
+            states.row(i) = states_vec[i];
         }
 
-        for (auto i = 0U; i < Robot::dimension; ++i)
+        for (auto i = 0U; i < Robot::dimension / 3; ++i)
         {
             // block[i] contains ith joint of all configs in rake
             block[i] = states.transpose()(i);
@@ -124,13 +124,13 @@ namespace vamp::planning
             // evaluate states in rake
             auto times = percents - i * backstep;
             for (int j = 0; j < rake; j++) {
-                states_vec.push_back(bez.evaluate(percents[j]));
+                states_vec.push_back(bez.evaluate(times.element(j)));
             }
             // get matrix of states
             for (int j = 0; j < rake; j++) {
-                states(j) = states_vec[j];
+                states.row(j) = states_vec[j];
             }
-            for (auto j = 0U; j < Robot::dimension; ++j)
+            for (auto j = 0U; j < Robot::dimension / 3; ++j)
             {
                 // block[i] contains ith joint of all configs in rake
                 block[j] = states.transpose()(j);
@@ -157,10 +157,10 @@ namespace vamp::planning
         // build input to MLP
         std::vector<double> x;
         for (int i = 0; i < Robot::dimension; i++) {
-            x.push_back(start[i]);
+            x.push_back(start.element(i));
         }
         for (int i = 0; i < Robot::dimension; i++) {
-            x.push_back(goal[i]);
+            x.push_back(goal.element(i));
         }
 
         // array to store inference output
@@ -168,23 +168,23 @@ namespace vamp::planning
         Robot::template topple_nn_forward(x, out);
 
         // build the anchors
-        row_matrix anchors(6, Robot::dimension);
+        row_matrix anchors(6, Robot::dimension / 3);
 
         // initial point
-        for (int i = 0; i < Robot::dimension; i++) {
-            anchors(0, i) = start[i];
+        for (int i = 0; i < Robot::dimension / 3; i++) {
+            anchors(0, i) = (double) start.element(i);
         }
 
         // intermediate points
         for (int i = 1; i <= 4; i++) {
-            for (int j = 0; j < Robot::dimension; j++) {
-                anchors(i, j) = out[(i - 1) * Robot::dimension + j];
+            for (int j = 0; j < Robot::dimension / 3; j++) {
+                anchors(i, j) = out[(i - 1) * Robot::dimension / 3 + j];
             }
         }
 
         // final point
-        for (int i = 0; i < Robot::dimension; i++) {
-            anchors(5, i) = goal[i];
+        for (int i = 0; i < Robot::dimension / 3; i++) {
+            anchors(5, i) = (double) goal.element(i);
         }
 
         Bezier bez(anchors);

@@ -119,6 +119,12 @@ namespace vamp::robots
             return 16384.87636281249;
         }
 
+        // placeholder
+        template <typename InputVector, typename OutputVector>
+        static inline auto topple_nn_forward(const InputVector &x, OutputVector &out) noexcept {
+            return;
+        }
+        
         template <std::size_t rake>
         inline static void sphere_fk(const ConfigurationBlock<rake> &x, Spheres<rake> &out) noexcept
         {
