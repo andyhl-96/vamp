@@ -21,6 +21,7 @@ if(VAMP_BUILD_PYTHON_BINDINGS)
       panda
       fetch
       baxter
+      pandatopp
     )
 
     list(APPEND VAMP_ROBOT_STRUCTS
@@ -29,6 +30,7 @@ if(VAMP_BUILD_PYTHON_BINDINGS)
       Panda
       Fetch
       Baxter
+      Pandatopp
     )
   endif()
 

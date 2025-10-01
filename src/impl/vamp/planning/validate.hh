@@ -107,8 +107,9 @@ namespace vamp::planning
             block[i] = states.transpose()(i);
         }
 
-        const std::size_t n = std::max(std::ceil(distance / static_cast<float>(rake) * resolution), 1.F);
-
+        // const std::size_t n = std::max(std::ceil(distance / static_cast<float>(rake) * resolution), 1.F);
+        // no idea if this is correct
+        const std::size_t n = resolution / static_cast<float>(rake);
         bool valid = (environment.attachments) ? Robot::template fkcc_attach<rake>(environment, block) :
                                                  Robot::template fkcc<rake>(environment, block);
         if (not valid or n == 1)
@@ -156,10 +157,10 @@ namespace vamp::planning
         // build input to MLP
         std::vector<double> x;
         for (int i = 0; i < Robot::dimension; i++) {
-            x.push_back(start[i])
+            x.push_back(start[i]);
         }
         for (int i = 0; i < Robot::dimension; i++) {
-            x.push_back(goal[i])
+            x.push_back(goal[i]);
         }
 
         // array to store inference output

@@ -8,9 +8,9 @@
 // NOLINTBEGIN(*-magic-numbers)
 namespace vamp::robots
 {
-    struct Panda_topp
+    struct Pandatopp
     {
-        static constexpr char *name = "panda";
+        static constexpr char *name = "pandatopp";
         static constexpr std::size_t dimension = 21;
         static constexpr std::size_t n_spheres = 59;
         static constexpr float min_radius = 0.012000000104308128;
@@ -159,8 +159,10 @@ namespace vamp::robots
         template <typename InputVector, typename OutputVector>
         static inline auto topple_nn_forward(const InputVector &x, OutputVector &out) noexcept
         {
-            FloatVector<8, 63> v;
-            FloatVector<8, 29> y;
+            // FloatVector<8, 63> v;
+            // FloatVector<8, 29> y;
+            std::array<double, 63> v;
+            std::array<double, 29> y;
             v[0] = 0.402872 + 0.015485742 * x[41] + -0.034053423 * x[40] + -0.0069409143 * x[39] + 0.011269291 * x[38] + 0.022611868 * x[37] + 0.009696519 * x[36] + -0.01044799 * x[35] + 0.04874406 * x[34] + -0.028093217 * x[33] + 0.05762263 * x[32] + -0.10481633 * x[31] + -0.11262423 * x[30] + -0.026545648 * x[29] + 0.08223713 * x[28] + -0.12928239 * x[27] + 0.5306107 * x[26] + -0.4540731 * x[25] + 0.10217234 * x[24] + 0.20562267 * x[23] + 0.52558887 * x[22] + -0.05590825 * x[21] + 0.014911669 * x[20] + 0.011194749 * x[19] + -0.05364745 * x[18] + 0.01217942 * x[17] + 0.034251526 * x[16] + -0.017200679 * x[15] + 0.029755618 * x[14] + 0.025088755 * x[13] + -0.018163225 * x[12] + -0.078984976 * x[11] + -0.09583885 * x[10] + 0.027789176 * x[9] + -0.07802391 * x[8] + 0.06818557 * x[7] + 0.015879832 * x[6] + 0.07760279 * x[5] + 0.19192794 * x[4] + -0.44863328 * x[3] + -0.1377915 * x[2] + -0.043356102 * x[1] + -0.0045386585 * x[0];
             if( v[0] >= 0. ) {
                 v[0] = v[0];
@@ -15912,7 +15914,7 @@ namespace vamp::robots
             return true;
         }
 
-        inline static auto eefk(const std::array<float, 7> &x) noexcept -> Eigen::Isometry3f
+        inline static auto eefk(const std::array<float, 21> &x) noexcept -> Eigen::Isometry3f
         {
             std::array<float, 36> v;
             std::array<float, 12> y;
