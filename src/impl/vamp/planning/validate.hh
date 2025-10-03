@@ -84,6 +84,7 @@ namespace vamp::planning
         Bezier bez,
         const collision::Environment<FloatVector<rake>> &environment) -> bool
     {
+        std::cout << "inside validate bez" << std::endl;
         // TODO: Fix use of reinterpret_cast in pack() so that this can be constexpr
         const auto percents = FloatVector<rake>(Percents<rake>::percents);
 
@@ -92,8 +93,9 @@ namespace vamp::planning
         // HACK: broadcast() implicitly assumes that the rake is exactly VectorWidth
         // use percents as times to get configs
         std::vector<state> states_vec;
+        auto percents_arr = percents.to_array();
         for (int i = 0; i < rake; i++) {
-            states_vec.push_back(bez.evaluate(percents.element(i)));
+            states_vec.push_back(bez.evaluate(static_cast<double>(percents_arr[i])));
         }
 
         row_matrix states(rake, Robot::dimension / 3);
@@ -108,7 +110,8 @@ namespace vamp::planning
         }
 
         // const std::size_t n = std::max(std::ceil(distance / static_cast<float>(rake) * resolution), 1.F);
-        // no idea if this is correct
+        // no idea if this is correct (its not)
+        std::cout << "check collision" << std::endl;
         const std::size_t n = resolution / static_cast<float>(rake);
         bool valid = (environment.attachments) ? Robot::template fkcc_attach<rake>(environment, block) :
                                                  Robot::template fkcc<rake>(environment, block);
@@ -119,12 +122,13 @@ namespace vamp::planning
 
         // slide the rake back along bez (i.e. compute new timesteps to rake)
         const auto backstep = percents / (rake * n);
+        std::cout << "sliding rake" << std::endl;
         for (auto i = 1U; i < n; ++i)
         {
             // evaluate states in rake
-            auto times = percents - i * backstep;
+            auto times = (percents - i * backstep).to_array();
             for (int j = 0; j < rake; j++) {
-                states_vec.push_back(bez.evaluate(times.element(j)));
+                states_vec.push_back(bez.evaluate(static_cast<double>(times[j])));
             }
             // get matrix of states
             for (int j = 0; j < rake; j++) {
@@ -136,6 +140,7 @@ namespace vamp::planning
                 block[j] = states.transpose()(j);
             }
 
+            // collision checkig is broken, ask someone wtf any of this shit is
             bool valid = (environment.attachments) ? Robot::template fkcc_attach<rake>(environment, block) :
                                                      Robot::template fkcc<rake>(environment, block);
             if (not valid)
@@ -154,13 +159,18 @@ namespace vamp::planning
         const typename Robot::Configuration &goal,
         const collision::Environment<FloatVector<rake>> &environment) -> bool
     {
+        std::cout << "inside validate bez motion" << std::endl;
         // build input to MLP
         std::vector<double> x;
-        for (int i = 0; i < Robot::dimension; i++) {
-            x.push_back(start.element(i));
+        std::cout << Robot::dimension << std::endl;
+        auto start_arr = start.to_array();
+        for (int i = 0; i < Robot::dimension; ++i) {
+            // this line for some reason changes the value of i
+            x.push_back(static_cast<double>(start_arr[i]));
         }
-        for (int i = 0; i < Robot::dimension; i++) {
-            x.push_back(goal.element(i));
+        auto goal_arr = goal.to_array();
+        for (int i = 0U; i < Robot::dimension; ++i) {
+            x.push_back(static_cast<double>(goal_arr[i]));
         }
 
         // array to store inference output
@@ -171,20 +181,20 @@ namespace vamp::planning
         row_matrix anchors(6, Robot::dimension / 3);
 
         // initial point
-        for (int i = 0; i < Robot::dimension / 3; i++) {
-            anchors(0, i) = (double) start.element(i);
+        for (int i = 0; i < Robot::dimension / 3; ++i) {
+            anchors(0, i) = static_cast<double>(start_arr[i]);
         }
 
         // intermediate points
         for (int i = 1; i <= 4; i++) {
-            for (int j = 0; j < Robot::dimension / 3; j++) {
+            for (int j = 0; j < Robot::dimension / 3; ++j) {
                 anchors(i, j) = out[(i - 1) * Robot::dimension / 3 + j];
             }
         }
 
         // final point
         for (int i = 0; i < Robot::dimension / 3; i++) {
-            anchors(5, i) = (double) goal.element(i);
+            anchors(5, i) = static_cast<double>(goal_arr[i]);
         }
 
         Bezier bez(anchors);
