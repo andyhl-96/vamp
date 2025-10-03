@@ -103,10 +103,13 @@ namespace vamp::planning
             states.row(i) = states_vec[i];
         }
 
+        // CHECK FOR CORRECTNES
         for (auto i = 0U; i < Robot::dimension / 3; ++i)
         {
             // block[i] contains ith joint of all configs in rake
-            block[i] = states.transpose()(i);
+            for (auto j = 0U; j < rake; j++) {
+                block[i][j] = states.transpose()(i, j);
+            }
         }
 
         // const std::size_t n = std::max(std::ceil(distance / static_cast<float>(rake) * resolution), 1.F);
@@ -137,7 +140,9 @@ namespace vamp::planning
             for (auto j = 0U; j < Robot::dimension / 3; ++j)
             {
                 // block[i] contains ith joint of all configs in rake
-                block[j] = states.transpose()(j);
+                for (auto k = 0U; k < rake; k++) {
+                    block[j][k] = states.transpose()(j, k);
+                }
             }
 
             // collision checkig is broken, ask someone wtf any of this shit is

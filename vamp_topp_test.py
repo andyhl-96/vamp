@@ -14,7 +14,7 @@ for i in range(14):
     planner_func,
     plan_settings,
     simp_settings,
-) = vamp.configure_robot_and_planner_with_kwargs("pandatopp", "rrtctopp")
+) = vamp.configure_robot_and_planner_with_kwargs("pandatopp", "rrtc")
 
 rng = vamp_module.halton()
 

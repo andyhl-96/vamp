@@ -258,4 +258,75 @@ namespace vamp::planning
         result.nanoseconds = vamp::utils::get_elapsed_nanoseconds(start_time);
         return result;
     }
+
+    // ADD BEZ INTERPLATION
+    template <typename Robot, std::size_t rake, std::size_t resolution>
+    inline auto compute_traj(
+        const Path<Robot> &path,
+        const collision::Environment<FloatVector<rake>> &environment,
+        const SimplifySettings &settings,
+        const typename vamp::rng::RNG<Robot>::Ptr rng) -> PlanningResult<Robot>
+    {
+        auto start_time = std::chrono::steady_clock::now();
+
+        PlanningResult<Robot> result;
+
+        const auto bspline = [&result, &environment, settings]()
+        { return smooth_bspline<Robot, rake, resolution>(result.path, environment, settings.bspline); };
+        const auto reduce = [&result, &environment, settings, rng]()
+        {
+            return reduce_path_vertices<Robot, rake, resolution>(
+                result.path, environment, settings.reduce, rng);
+        };
+        const auto shortcut = [&result, &environment, settings]()
+        { return shortcut_path<Robot, rake, resolution>(result.path, environment, settings.shortcut); };
+        const auto perturb = [&result, &environment, settings, rng]()
+        { return perturb_path<Robot, rake, resolution>(result.path, environment, settings.perturb, rng); };
+
+        const std::map<SimplifyRoutine, std::function<bool()>> operations = {
+            {BSPLINE, bspline},
+            {REDUCE, reduce},
+            {SHORTCUT, shortcut},
+            {PERTURB, perturb},
+        };
+
+        // Check if straight line is valid
+        if (path.size() == 2 or (path.size() > 2 and validate_motion<Robot, rake, resolution>(
+                                                         path.front(), path.back(), environment)))
+        {
+            result.path.emplace_back(path.front());
+            result.path.emplace_back(path.back());
+            result.nanoseconds = vamp::utils::get_elapsed_nanoseconds(start_time);
+            return result;
+        }
+
+        result.path = path;
+
+        if (settings.interpolate)
+        {
+            result.path.interpolate_to_n_states(settings.interpolate);
+        }
+
+        if (path.size() > 2)
+        {
+            for (auto i = 0U; i < settings.max_iterations; ++i)
+            {
+                result.iterations++;
+
+                bool any = false;
+                for (const auto &op : settings.operations)
+                {
+                    any |= operations.find(op)->second();
+                }
+
+                if (not any)
+                {
+                    break;
+                }
+            }
+        }
+
+        result.nanoseconds = vamp::utils::get_elapsed_nanoseconds(start_time);
+        return result;
+    }
 }  // namespace vamp::planning
