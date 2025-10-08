@@ -106,28 +106,28 @@ namespace vamp::planning
             // drawing samples
             while (iter++ < settings.max_iterations and free_index < settings.max_samples)
             {
-                std::cout << "sampling" << std::endl;
+                // std::cout << "sampling" << std::endl;
                 float asize = tree_a->size();
                 float bsize = tree_b->size();
                 float ratio = std::abs(asize - bsize) / asize;
 
                 if ((not settings.balance) or ratio < settings.tree_ratio)
                 {
-                    std::cout << "swapping trees" << std::endl;
+                    // std::cout << "swapping trees" << std::endl;
                     std::swap(tree_a, tree_b);
                     tree_a_is_start = not tree_a_is_start;
-                    std::cout << "trees swapped" << std::endl;
+                    // std::cout << "trees swapped" << std::endl;
 
                 }
 
                 auto temp = rng->next();
-                std::cout << "got sample" << std::endl;
+                // std::cout << "got sample" << std::endl;
                 typename Robot::ConfigurationBuffer temp_array;
                 temp.to_array(temp_array.data());
 
 
                 const auto nearest = tree_a->nearest(NNFloatArray<dimension>{temp_array.data()});
-                std::cout << "nearest reached" << std::endl;
+                // std::cout << "nearest reached" << std::endl;
 
                 if (not nearest)
                 {
@@ -257,6 +257,7 @@ namespace vamp::planning
             result.iterations = iter;
             result.size.emplace_back(start_tree.size());
             result.size.emplace_back(goal_tree.size());
+            std::cout << "done" << std::endl;
             return result;
         }
     };

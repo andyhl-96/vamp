@@ -67,11 +67,20 @@ for cuboid in cuboids:
 # for cuboid in cuboids_data:
 #     sim.add_cuboid(cuboid[2], cuboid[0], cuboid[1])
 
-
+ts = time.perf_counter()
 result = planner_func(np.array(pos1), np.array(pos2), env, plan_settings, rng)
+tf = time.perf_counter()
+print(tf - ts)
+
+if result.solved:
+    print("solved")
+else:
+    print("failed")
+    exit()
+print(result.path.numpy())
 # simple = vamp_module.simplify(result.path, env, simp_settings, rng)
 traj = vamp_module.compute_traj(result.path, env, simp_settings, rng)
-print(traj.path.numpy(), flush=True)
+# print(traj.path.numpy(), flush=True)
 q_path = traj.path.numpy()[:, 0:7]
 
 viz.display(q_path[0])

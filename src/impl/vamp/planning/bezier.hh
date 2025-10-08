@@ -50,7 +50,7 @@ namespace vamp::planning {
                 return traj;
             }
             
-            state evaluate(int t) {
+            state evaluate(double t) {
                 state P(1, this->anchors.rows());
                 for (int i = 0; i <= this->degree; i++) {
                     P(0, i) = ((comb(this->degree, i) * 

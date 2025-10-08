@@ -36,7 +36,7 @@ namespace vamp::robots
         };
 
         template <std::size_t rake>
-        using ConfigurationBlock = FloatVector<rake, dimension>;
+        using ConfigurationBlock = FloatVector<rake, dimension / 3>;
 
         template <std::size_t rake>
         struct Spheres

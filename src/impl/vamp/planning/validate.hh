@@ -84,9 +84,12 @@ namespace vamp::planning
         Bezier bez,
         const collision::Environment<FloatVector<rake>> &environment) -> bool
     {
-        std::cout << "inside validate bez" << std::endl;
+        // std::cout << "inside validate bez" << std::endl;
         // TODO: Fix use of reinterpret_cast in pack() so that this can be constexpr
         const auto percents = FloatVector<rake>(Percents<rake>::percents);
+        // for (int i = 0; i < rake; i++) {
+        //     std::cout << percents << std::endl;
+        // }
 
         typename Robot::template ConfigurationBlock<rake> block;
 
@@ -95,6 +98,7 @@ namespace vamp::planning
         std::vector<state> states_vec;
         auto percents_arr = percents.to_array();
         for (int i = 0; i < rake; i++) {
+            // std::cout << percents_arr[i] << std::endl;
             states_vec.push_back(bez.evaluate(static_cast<double>(percents_arr[i])));
         }
 
@@ -104,29 +108,32 @@ namespace vamp::planning
         }
 
         // CHECK FOR CORRECTNES
-        for (auto i = 0U; i < Robot::dimension / 3; ++i)
+        for (int i = 0; i < Robot::dimension / 3; i++)
         {
+            // std::cout << states.row(i) << std::endl;
             // block[i] contains ith joint of all configs in rake
-            for (auto j = 0U; j < rake; j++) {
+            for (int j = 0; j < rake; j++) {
                 block[i][j] = states.transpose()(i, j);
             }
         }
 
         // const std::size_t n = std::max(std::ceil(distance / static_cast<float>(rake) * resolution), 1.F);
         // no idea if this is correct (its not)
-        std::cout << "check collision" << std::endl;
-        const std::size_t n = resolution / static_cast<float>(rake);
+        // std::cout << "check collision" << std::endl;
+        const std::size_t n = resolution;
         bool valid = (environment.attachments) ? Robot::template fkcc_attach<rake>(environment, block) :
                                                  Robot::template fkcc<rake>(environment, block);
+                                                
+        // std::cout << valid << std::endl;
         if (not valid or n == 1)
         {
             return valid;
         }
 
         // slide the rake back along bez (i.e. compute new timesteps to rake)
-        const auto backstep = percents / (rake * n);
-        std::cout << "sliding rake" << std::endl;
-        for (auto i = 1U; i < n; ++i)
+        const auto backstep = percents / n;
+        // std::cout << "sliding rake" << std::endl;
+        for (int i = 1; i < n; i++)
         {
             // evaluate states in rake
             auto times = (percents - i * backstep).to_array();
@@ -137,10 +144,10 @@ namespace vamp::planning
             for (int j = 0; j < rake; j++) {
                 states.row(j) = states_vec[j];
             }
-            for (auto j = 0U; j < Robot::dimension / 3; ++j)
+            for (int j = 0; j < Robot::dimension / 3; j++)
             {
                 // block[i] contains ith joint of all configs in rake
-                for (auto k = 0U; k < rake; k++) {
+                for (int k = 0; k < rake; k++) {
                     block[j][k] = states.transpose()(j, k);
                 }
             }
@@ -164,11 +171,10 @@ namespace vamp::planning
         const typename Robot::Configuration &goal,
         const collision::Environment<FloatVector<rake>> &environment) -> bool
     {
-        std::cout << "inside validate bez motion" << std::endl;
+        // std::cout << "inside validate bez motion" << std::endl;
         // build input to MLP
         std::vector<double> x;
         auto start_arr = start.to_array();
-        std::cout << start_arr.size() << std::endl;
 
         for (int i = 0; i < Robot::dimension; ++i) {
             // this line for some reason changes the value of i
