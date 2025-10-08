@@ -38,7 +38,7 @@ namespace vamp::planning {
             std::vector<state> generate_trajectory(int T) {
                 std::vector<state> traj;
                 for (int t = 0; t <= T; t++) {
-                    state P(1, this->anchors.cols());
+                    state P(1, this->anchors.rows());
                     for (int i = 0; i <= this->degree; i++) {
                         P(0, i) = ((comb(this->degree, i) * 
                         (pow(1.0 - t * 1.0 / T, this->degree - i)) * 
@@ -51,7 +51,7 @@ namespace vamp::planning {
             }
             
             state evaluate(int t) {
-                state P(1, this->anchors.cols());
+                state P(1, this->anchors.rows());
                 for (int i = 0; i <= this->degree; i++) {
                     P(0, i) = ((comb(this->degree, i) * 
                     (pow(1.0 - t * 1.0, this->degree - i)) * 

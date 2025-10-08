@@ -281,6 +281,16 @@ namespace vamp::binding
                 path, EnvironmentVector(environment), settings, rng);
         }
 
+        inline static auto compute_traj(
+            const Path &path,
+            const EnvironmentInput &environment,
+            const vamp::planning::SimplifySettings &settings,
+            typename RNG::Ptr rng) -> PlanningResult
+        {
+            return vamp::planning::compute_traj<Robot, rake, Robot::resolution>(
+                path, EnvironmentVector(environment), settings, rng);
+        }
+
         inline static auto eefk(const Type &start) -> Eigen::Matrix4f
         {
             return Robot::eefk(Input::array(start)).matrix();
@@ -529,6 +539,14 @@ namespace vamp::binding
             "settings"_a,
             "rng"_a,
             "Simplification heuristics to post-process a path.");
+        submodule.def(
+            "compute_traj",
+            HPN::compute_traj,
+            "path"_a,
+            "environment"_a,
+            "settings"_a,
+            "rng"_a,
+            "Compute the topple traj.");
 
 #define MF(name, func, desc, ...)                                                                            \
     submodule.def(name, HPN::func, ##__VA_ARGS__, desc);                                                     \

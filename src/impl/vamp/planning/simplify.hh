@@ -8,6 +8,7 @@
 #include <vamp/planning/validate.hh>
 #include <vamp/random/rng.hh>
 #include <vamp/vector.hh>
+#include <vamp/planning/bezier.hh>
 
 namespace vamp::planning
 {
@@ -269,63 +270,73 @@ namespace vamp::planning
     {
         auto start_time = std::chrono::steady_clock::now();
 
+        // object to store result
+        // path param
         PlanningResult<Robot> result;
 
-        const auto bspline = [&result, &environment, settings]()
-        { return smooth_bspline<Robot, rake, resolution>(result.path, environment, settings.bspline); };
-        const auto reduce = [&result, &environment, settings, rng]()
-        {
-            return reduce_path_vertices<Robot, rake, resolution>(
-                result.path, environment, settings.reduce, rng);
-        };
-        const auto shortcut = [&result, &environment, settings]()
-        { return shortcut_path<Robot, rake, resolution>(result.path, environment, settings.shortcut); };
-        const auto perturb = [&result, &environment, settings, rng]()
-        { return perturb_path<Robot, rake, resolution>(result.path, environment, settings.perturb, rng); };
+        // for waypoint in path, call topple_nn_forward  
+        for (int i = 0; i < path.size() - 1; i++) {
+            std::vector<double> x;
+            auto path_arr = path[i].to_array();
+            auto path_arr1 = path[i + 1].to_array();   
+            std::cout << path_arr.size() << std::endl;
+            for (int j = 0; j < Robot::dimension; j++) {
+                x.push_back(path_arr[j]);
+            }
+            for (int j = 0; j < Robot::dimension; j++) {
+                x.push_back(path_arr1[j]);
+            }
+            std::array<double, 29> out;
 
-        const std::map<SimplifyRoutine, std::function<bool()>> operations = {
-            {BSPLINE, bspline},
-            {REDUCE, reduce},
-            {SHORTCUT, shortcut},
-            {PERTURB, perturb},
-        };
+            Robot::template topple_nn_forward(x, out);
 
-        // Check if straight line is valid
-        if (path.size() == 2 or (path.size() > 2 and validate_motion<Robot, rake, resolution>(
-                                                         path.front(), path.back(), environment)))
-        {
-            result.path.emplace_back(path.front());
-            result.path.emplace_back(path.back());
-            result.nanoseconds = vamp::utils::get_elapsed_nanoseconds(start_time);
-            return result;
-        }
+            // build the anchors
+            row_matrix anchors(6, Robot::dimension / 3);
 
-        result.path = path;
+            // initial point
+            for (int j = 0; j < Robot::dimension / 3; ++j) {
+                anchors(0, j) = x[j];
+            }
 
-        if (settings.interpolate)
-        {
-            result.path.interpolate_to_n_states(settings.interpolate);
-        }
-
-        if (path.size() > 2)
-        {
-            for (auto i = 0U; i < settings.max_iterations; ++i)
-            {
-                result.iterations++;
-
-                bool any = false;
-                for (const auto &op : settings.operations)
-                {
-                    any |= operations.find(op)->second();
-                }
-
-                if (not any)
-                {
-                    break;
+            // intermediate points
+            for (int j = 1; j <= 4; j++) {
+                for (int k = 0; k < Robot::dimension / 3; ++k) {
+                    anchors(j, k) = out[(j - 1) * Robot::dimension / 3 + k];
                 }
             }
-        }
 
+            // final point
+            for (int j = 0; j < Robot::dimension / 3; j++) {
+                anchors(5, j) = x[j + Robot::dimension];
+            }
+
+            std::cout << anchors.row(5) << std::endl;
+
+            int T = out[28] * 1000;
+
+            Bezier bez(anchors);
+
+            std::vector<state> waypts = bez.generate_trajectory(T);
+            // convert waypoints to floatvector
+            for (int j = 0; j < waypts.size(); j++) {
+                alignas(vamp::FloatVectorAlignment)
+                std::array<float, vamp::FloatVector<Robot::dimension>::num_scalars_rounded> tmp = {};
+
+                // copy and cast the actual Dim scalars
+                for (int k = 0; k < Robot::dimension; ++k) {
+                    tmp[k] = static_cast<float>(waypts[j](0, static_cast<int>(k)));
+                    if (k > Robot::dimension / 3) {
+                        tmp[k] = 0;
+                    }
+                }
+
+                // construct the SIMD vector (constructor takes pointer to float data)
+                vamp::FloatVector<Robot::dimension> vv(tmp.data());
+                result.path.emplace_back(vv);
+                // std::cout << waypts[j] << std::endl;
+            }
+        }
+       
         result.nanoseconds = vamp::utils::get_elapsed_nanoseconds(start_time);
         return result;
     }

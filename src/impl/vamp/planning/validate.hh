@@ -167,8 +167,9 @@ namespace vamp::planning
         std::cout << "inside validate bez motion" << std::endl;
         // build input to MLP
         std::vector<double> x;
-        std::cout << Robot::dimension << std::endl;
         auto start_arr = start.to_array();
+        std::cout << start_arr.size() << std::endl;
+
         for (int i = 0; i < Robot::dimension; ++i) {
             // this line for some reason changes the value of i
             x.push_back(static_cast<double>(start_arr[i]));

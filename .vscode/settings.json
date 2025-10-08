@@ -62,6 +62,23 @@
         "__bit_reference": "cpp",
         "__split_buffer": "cpp",
         "__verbose_abort": "cpp",
-        "stack": "cpp"
-    }
+        "stack": "cpp",
+        "cstdarg": "cpp",
+        "condition_variable": "cpp",
+        "list": "cpp",
+        "unordered_set": "cpp",
+        "source_location": "cpp",
+        "fstream": "cpp",
+        "mutex": "cpp",
+        "shared_mutex": "cpp",
+        "cinttypes": "cpp",
+        "core": "cpp",
+        "strstream": "cpp",
+        "cfenv": "cpp",
+        "codecvt": "cpp",
+        "forward_list": "cpp",
+        "stdfloat": "cpp",
+        "typeindex": "cpp"
+    },
+    "python.analysis.autoImportCompletions": true
 }
