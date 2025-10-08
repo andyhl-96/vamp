@@ -34,6 +34,7 @@ namespace vamp::planning {
             Bezier(row_matrix anchors) {
                 this->anchors = anchors;
                 this->degree = anchors.rows() - 1;
+                // compute bez comb
             }
 
             std::vector<state> generate_trajectory(int T) {
