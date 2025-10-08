@@ -4,9 +4,10 @@
 
 
 namespace vamp::planning {
-    using row_matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::AutoAlign | Eigen::RowMajor>;
-    using state = Eigen::Matrix<double, 1, Eigen::Dynamic, Eigen::AutoAlign | Eigen::RowMajor>;
+    using row_matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+    using state = Eigen::Matrix<double, 1, Eigen::Dynamic, Eigen::RowMajor>;
 
+    // maybe optimize this, i.e. compute once and store somewhere
     inline static int comb(int n, int k) {
         int n_fact = 1;
         int k_fact = 1;
@@ -41,8 +42,8 @@ namespace vamp::planning {
                     state P(1, this->anchors.rows());
                     for (int i = 0; i <= this->degree; i++) {
                         P(0, i) = ((comb(this->degree, i) * 
-                        (pow(1.0 - t * 1.0 / T, this->degree - i)) * 
-                        (pow(1.0 * t / T, i))));
+                        (pow(1.0 - t * 1.0 / T, 1.0 * this->degree - i)) * 
+                        (pow(1.0 * t / T, 1.0 * i))));
                     }
                     state s = P * this->anchors;
                     traj.push_back(s);
@@ -54,8 +55,8 @@ namespace vamp::planning {
                 state P(1, this->anchors.rows());
                 for (int i = 0; i <= this->degree; i++) {
                     P(0, i) = ((comb(this->degree, i) * 
-                    (pow(1.0 - t * 1.0, this->degree - i)) * 
-                    (pow(1.0 * t, i))));
+                    (pow(1.0 - t * 1.0, 1.0 * this->degree - i)) * 
+                    (pow(1.0 * t, 1.0 * i))));
                 }
                 state s = P * this->anchors;
                 return s;

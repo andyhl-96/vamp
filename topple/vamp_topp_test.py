@@ -1,9 +1,10 @@
 import vamp
 import numpy as np
-# from vamp import pybullet_interface as vpb
+from vamp import pybullet_interface as vpb
 import pinocchio.visualize
 import os
 import time
+import hppfcl as fcl
 
 pos1 = [0.9941923543408971, -0.051116248331033905, 0.55644523090925, -2.204390838326673, 0.016857619708280643, 2.293574043590873, 0.702844622050357]
 pos2 = [-1.4847849572216933, 0.013402851810183476, -0.16617785697236934, -2.1464311136674072, 0.017834601468841655, 2.245508108743958, 0.7687104453444691]
@@ -23,6 +24,16 @@ path = os.getcwd()
 model, collision_model, visual_model = pinocchio.buildModelsFromUrdf(
     path + "/fr3_franka_hand.urdf", path + "/fr3/collision", None
 )
+
+plane_geom = fcl.Box(0.4, 0.2, 0.5)
+plane_name = "front_plane"
+plane_placement = pinocchio.SE3(pinocchio.utils.rotate('x', 0), np.array([0.5, 0, 0.25]))
+plane_object = pinocchio.GeometryObject(
+    name=plane_name, parent_joint=0, parent_frame=0, placement=plane_placement, collision_geometry=plane_geom
+)
+plane_object.meshColor = np.array([0, 0, 0, 1])
+visual_model.addGeometryObject(plane_object)
+
 viz = pinocchio.visualize.MeshcatVisualizer(model, collision_model, visual_model)
 
 try:
@@ -39,7 +50,7 @@ rng = vamp_module.halton()
 
 plan_settings.max_iterations = 10000
 plan_settings.max_samples = 10000
-plan_settings.range = 1.25
+plan_settings.range = 1
 
 # xyz, rpy, lwh
 cuboids_data = [
@@ -52,12 +63,12 @@ cuboids_data = [
         # back
         # [[-0.5, 0.0, 0.0], [0.0, 0.0, 0.0], [0.25, 0.01, 0.5]],
         # front wall
-        [[0.5, 0.0, 0.0], [0.0, 0.0, 0.0], [0.25, 0.01, 0.5]],
+        [[0.5, 0.0, 0.0], [0.0, 0.0, 0.0], [0.2, 0.1, 0.5]],
         # ground plane
-        [[0, 0, -0.15], [0.0, 0.0, 0.0], [1.0, 1.0, 0.1]],
+        [[0, 0, -0.2], [0.0, 0.0, 0.0], [1.0, 1.0, 0.1]],
     ]
 
-# sim = vpb.PyBulletSimulator(str("resources/panda/panda.urdf"), vamp_module.joint_names(), True)
+# sim = vpb.PyBulletSimulator(str("../resources/panda/panda.urdf"), vamp_module.joint_names(), True)
 
 env = vamp.Environment()
 cuboids = [vamp.Cuboid(*data) for data in cuboids_data]

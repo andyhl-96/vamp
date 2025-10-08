@@ -279,12 +279,12 @@ namespace vamp::planning
             std::vector<double> x;
             auto path_arr = path[i].to_array();
             auto path_arr1 = path[i + 1].to_array();   
-            std::cout << path_arr.size() << std::endl;
+            // std::cout << path_arr.size() << std::endl;
             for (int j = 0; j < Robot::dimension; j++) {
-                x.push_back(path_arr[j]);
+                x.push_back(static_cast<double>(path_arr[j]));
             }
             for (int j = 0; j < Robot::dimension; j++) {
-                x.push_back(path_arr1[j]);
+                x.push_back(static_cast<double>(path_arr1[j]));
             }
             std::array<double, 29> out;
 
@@ -310,7 +310,7 @@ namespace vamp::planning
                 anchors(5, j) = x[j + Robot::dimension];
             }
 
-            std::cout << anchors.row(5) << std::endl;
+            // std::cout << anchors.row(5) << std::endl;
 
             int T = out[28] * 1000;
 
@@ -324,7 +324,7 @@ namespace vamp::planning
 
                 // copy and cast the actual Dim scalars
                 for (int k = 0; k < Robot::dimension; ++k) {
-                    tmp[k] = static_cast<float>(waypts[j](0, static_cast<int>(k)));
+                    tmp[k] = static_cast<double>(waypts[j](0, static_cast<int>(k)));
                     if (k > Robot::dimension / 3) {
                         tmp[k] = 0;
                     }

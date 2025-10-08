@@ -257,7 +257,7 @@ namespace vamp::planning
             result.iterations = iter;
             result.size.emplace_back(start_tree.size());
             result.size.emplace_back(goal_tree.size());
-            std::cout << "done" << std::endl;
+            // std::cout << "done" << std::endl;
             return result;
         }
     };

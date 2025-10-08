@@ -95,32 +95,30 @@ namespace vamp::planning
 
         // HACK: broadcast() implicitly assumes that the rake is exactly VectorWidth
         // use percents as times to get configs
-        std::vector<state> states_vec;
+        // std::array<state, rake> states_arr;
         auto percents_arr = percents.to_array();
-        for (int i = 0; i < rake; i++) {
-            // std::cout << percents_arr[i] << std::endl;
-            states_vec.push_back(bez.evaluate(static_cast<double>(percents_arr[i])));
-        }
 
-        row_matrix states(rake, Robot::dimension / 3);
+        std::array<std::array<float, rake>, Robot::dimension / 3> configs;
         for (int i = 0; i < rake; i++) {
-            states.row(i) = states_vec[i];
+            const auto &state = bez.evaluate(static_cast<double>(percents_arr[i]));
+
+            for (auto j = 0U; j < Robot::dimension / 3; ++j)
+            {
+                configs[j][i] = state[j];
+            }
         }
 
         // CHECK FOR CORRECTNES
         for (int i = 0; i < Robot::dimension / 3; i++)
         {
-            // std::cout << states.row(i) << std::endl;
-            // block[i] contains ith joint of all configs in rake
-            for (int j = 0; j < rake; j++) {
-                block[i][j] = states.transpose()(i, j);
-            }
+            block[i] = FloatVector<rake>(configs[i]);
+            // std::cout << block[i] << std::endl;
         }
 
         // const std::size_t n = std::max(std::ceil(distance / static_cast<float>(rake) * resolution), 1.F);
         // no idea if this is correct (its not)
         // std::cout << "check collision" << std::endl;
-        const std::size_t n = resolution;
+        const std::size_t n = static_cast<float>(resolution) / 2;
         bool valid = (environment.attachments) ? Robot::template fkcc_attach<rake>(environment, block) :
                                                  Robot::template fkcc<rake>(environment, block);
                                                 
@@ -131,25 +129,38 @@ namespace vamp::planning
         }
 
         // slide the rake back along bez (i.e. compute new timesteps to rake)
-        const auto backstep = percents / n;
+        // this is stupid
+        const auto backstep = percents.broadcast(0) / n;
+        // for (int i = 0; i < backstep.to_array().size(); i++) {
+        //     std::cout << backstep.to_array()[i] << std::endl;
+        // }
+
         // std::cout << "sliding rake" << std::endl;
         for (int i = 1; i < n; i++)
         {
             // evaluate states in rake
+            // this is wrong as fuk
             auto times = (percents - i * backstep).to_array();
-            for (int j = 0; j < rake; j++) {
-                states_vec.push_back(bez.evaluate(static_cast<double>(times[j])));
-            }
-            // get matrix of states
-            for (int j = 0; j < rake; j++) {
-                states.row(j) = states_vec[j];
-            }
-            for (int j = 0; j < Robot::dimension / 3; j++)
-            {
-                // block[i] contains ith joint of all configs in rake
-                for (int k = 0; k < rake; k++) {
-                    block[j][k] = states.transpose()(j, k);
+            // for (int j = 0; j < rake; j++) {
+            //     // std::cout << times[j] << std::endl;
+            //     states_arr[j] = (bez.evaluate(static_cast<double>(times[j])));
+            // }
+
+            std::array<std::array<float, rake>, Robot::dimension / 3> configs;
+            for (int i = 0; i < rake; i++) {
+                const auto &state = bez.evaluate(static_cast<double>(times[i]));
+
+                for (auto j = 0U; j < Robot::dimension / 3; ++j)
+                {
+                    configs[j][i] = state[j];
                 }
+            }
+
+            // CHECK FOR CORRECTNES
+            for (int i = 0; i < Robot::dimension / 3; i++)
+            {
+                block[i] = FloatVector<rake>(configs[i]);
+                // std::cout << block[i] << std::endl;
             }
 
             // collision checkig is broken, ask someone wtf any of this shit is
@@ -173,16 +184,16 @@ namespace vamp::planning
     {
         // std::cout << "inside validate bez motion" << std::endl;
         // build input to MLP
-        std::vector<double> x;
+        std::array<double, 42> x;
         auto start_arr = start.to_array();
 
         for (int i = 0; i < Robot::dimension; ++i) {
             // this line for some reason changes the value of i
-            x.push_back(static_cast<double>(start_arr[i]));
+            x[i] = static_cast<double>(start_arr[i]);
         }
         auto goal_arr = goal.to_array();
         for (int i = 0U; i < Robot::dimension; ++i) {
-            x.push_back(static_cast<double>(goal_arr[i]));
+            x[Robot::dimension + i] = static_cast<double>(goal_arr[i]);
         }
 
         // array to store inference output
