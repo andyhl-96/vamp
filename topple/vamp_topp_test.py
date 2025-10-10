@@ -34,6 +34,15 @@ plane_object = pinocchio.GeometryObject(
 plane_object.meshColor = np.array([0, 0, 0, 1])
 visual_model.addGeometryObject(plane_object)
 
+plane_geom = fcl.Box(0.4, 0.2, 0.5)
+plane_name = "front_plane1"
+plane_placement = pinocchio.SE3(pinocchio.utils.rotate('x', 0), np.array([0.5, 0, 1.1]))
+plane_object = pinocchio.GeometryObject(
+    name=plane_name, parent_joint=0, parent_frame=0, placement=plane_placement, collision_geometry=plane_geom
+)
+plane_object.meshColor = np.array([0, 0, 0, 1])
+visual_model.addGeometryObject(plane_object)
+
 viz = pinocchio.visualize.MeshcatVisualizer(model, collision_model, visual_model)
 
 try:
@@ -48,9 +57,10 @@ viz.loadViewerModel()
 
 rng = vamp_module.halton()
 
-plan_settings.max_iterations = 10000
-plan_settings.max_samples = 10000
+plan_settings.max_iterations = 100000
+plan_settings.max_samples = 100000
 plan_settings.range = 1
+simp_settings.bez = True
 
 # xyz, rpy, lwh
 cuboids_data = [
@@ -61,7 +71,7 @@ cuboids_data = [
         # right wall
         # [[-0.4, 0.0, 0.91], [0.0, 0.0, 0.0], [0.01, 1.0, 1.0]],
         # back
-        # [[-0.5, 0.0, 0.0], [0.0, 0.0, 0.0], [0.25, 0.01, 0.5]],
+        [[0.5, 0.0, 1.35], [0.0, 0.0, 0.0], [0.2, 0.1, 0.5]],
         # front wall
         [[0.5, 0.0, 0.0], [0.0, 0.0, 0.0], [0.2, 0.1, 0.5]],
         # ground plane
@@ -88,8 +98,9 @@ if result.solved:
 else:
     print("failed")
     exit()
-print(result.path.numpy())
+# print(result.path.numpy())
 # simple = vamp_module.simplify(result.path, env, simp_settings, rng)
+result = vamp_module.simplify(result.path, env, simp_settings, rng)
 traj = vamp_module.compute_traj(result.path, env, simp_settings, rng)
 # print(traj.path.numpy(), flush=True)
 q_path = traj.path.numpy()[:, 0:7]
@@ -99,7 +110,10 @@ viz.display(q_path[0])
 input("Ready, press any key: ")
 q_curr = None
 for i in range(len(q_path)):
+    ts = time.perf_counter()
     q_curr = q_path[i]
     viz.display(q_curr)
+    tf = time.perf_counter()
+    print(tf - ts)
     # time.sleep(0.0001)
 

@@ -30,11 +30,15 @@ namespace vamp::planning {
         public:
             row_matrix anchors;
             int degree;
+            std::array<double, 6> combs;
 
             Bezier(row_matrix anchors) {
                 this->anchors = anchors;
                 this->degree = anchors.rows() - 1;
                 // compute bez comb
+                for (int i = 0; i <= this->degree; i++) {
+                    this->combs[i] = comb(this->degree, i);
+                }
             }
 
             std::vector<state> generate_trajectory(int T) {
@@ -42,7 +46,7 @@ namespace vamp::planning {
                 for (int t = 0; t <= T; t++) {
                     state P(1, this->anchors.rows());
                     for (int i = 0; i <= this->degree; i++) {
-                        P(0, i) = ((comb(this->degree, i) * 
+                        P(0, i) = ((this->combs[i] * 
                         (pow(1.0 - t * 1.0 / T, 1.0 * this->degree - i)) * 
                         (pow(1.0 * t / T, 1.0 * i))));
                     }
@@ -55,7 +59,7 @@ namespace vamp::planning {
             state evaluate(double t) {
                 state P(1, this->anchors.rows());
                 for (int i = 0; i <= this->degree; i++) {
-                    P(0, i) = ((comb(this->degree, i) * 
+                    P(0, i) = ((this->combs[i] * 
                     (pow(1.0 - t * 1.0, 1.0 * this->degree - i)) * 
                     (pow(1.0 * t, 1.0 * i))));
                 }

@@ -142,6 +142,34 @@ namespace vamp::planning
     }
 
     template <typename Robot, std::size_t rake, std::size_t resolution>
+    inline static auto shortcut_bez_path(
+        Path<Robot> &path,
+        const collision::Environment<FloatVector<rake>> &environment,
+        const ShortcutSettings & /*settings*/) -> bool
+    {
+        if (path.size() < 3)
+        {
+            return false;
+        }
+
+        bool result = false;
+        for (auto i = 0U; i < path.size() - 2; ++i)
+        {
+            for (auto j = path.size() - 1; j > i + 1; --j)
+            {
+                if (validate_bez_motion<Robot, rake, resolution>(path[i], path[j], environment))
+                {
+                    path.erase(path.begin() + i + 1, path.begin() + j);
+                    result = true;
+                    break;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    template <typename Robot, std::size_t rake, std::size_t resolution>
     inline static auto perturb_path(
         Path<Robot> &path,
         const collision::Environment<FloatVector<rake>> &environment,
@@ -201,6 +229,15 @@ namespace vamp::planning
 
         PlanningResult<Robot> result;
 
+        if (settings.bez) {
+            // const auto shortcut_bez = [&result, &environment, settings]()
+            //     { return shortcut_bez_path<Robot, rake, resolution>(result.path, environment, settings.shortcut_bez); };
+            // result.path
+            result.path = path;
+            shortcut_bez_path<Robot, rake, resolution>(result.path, environment, settings.shortcut_bez);
+            return result;
+        }
+
         const auto bspline = [&result, &environment, settings]()
         { return smooth_bspline<Robot, rake, resolution>(result.path, environment, settings.bspline); };
         const auto reduce = [&result, &environment, settings, rng]()
@@ -210,6 +247,7 @@ namespace vamp::planning
         };
         const auto shortcut = [&result, &environment, settings]()
         { return shortcut_path<Robot, rake, resolution>(result.path, environment, settings.shortcut); };
+        
         const auto perturb = [&result, &environment, settings, rng]()
         { return perturb_path<Robot, rake, resolution>(result.path, environment, settings.perturb, rng); };
 
@@ -217,6 +255,7 @@ namespace vamp::planning
             {BSPLINE, bspline},
             {REDUCE, reduce},
             {SHORTCUT, shortcut},
+            // {SHORTCUT_BEZ, shortcut_bez},
             {PERTURB, perturb},
         };
 
